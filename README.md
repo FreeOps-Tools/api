@@ -1,2 +1,2 @@
-# api
+# API
 LogIQ API
