@@ -106,3 +106,5 @@ dist
 # Added
 .env
 .env.local
+server.js
+test.js

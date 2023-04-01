@@ -21,15 +21,15 @@ app.post('/api/analyze', (req, res) => {
       return res.json({ isUp: false, ipAddress: null, uptime: 0 });
     }
 
-    dns.lookup(url, (dnsError, ipAddress) => {
-      if (dnsError) {
-        console.error(`Failed to lookup IP address for ${url}: ${dnsError}`);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+  dns.lookup(url, (dnsError, ipAddress) => {
+    if (dnsError) {
+      console.error(`Failed to lookup IP address for ${url}: ${dnsError}`);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
 
-      const uptime = Math.floor(Math.random() * 100);
-      return res.json({ isUp: true, ipAddress, uptime });
-    });
+    const uptime = Math.floor(Math.random() * 100);
+    return res.json({ isUp: true, ipAddress, uptime });
+  });
   }).on('error', (error) => {
     console.error(`Failed to request ${url}: ${error}`);
     return res.json({ isUp: false, ipAddress: null, uptime: 0 });
