@@ -23,7 +23,7 @@ Error Response:
 `Body`:
 `error` (string): The error message.
 
-### Examples:
+### Examples
 
 Request:
 
