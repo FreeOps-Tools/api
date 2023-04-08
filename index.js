@@ -7,9 +7,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const url = require('url');
 const now = require('performance-now');
+const cors = require('cors');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
 
 app.post('/api/analyze', (req, res) => {
   const hostname = url.parse(req.body.url).hostname;
