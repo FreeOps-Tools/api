@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
+    "watch": "nodemon --ext *",
     "dev": "node server.js",
     "test1": "node test.js"
   },
@@ -26,6 +27,9 @@
     "express": "^4.18.2",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
+    "lighthouse": "^10.1.0",
+    "nodemon": "^2.0.22",
+    "performance-now": "^2.1.0",
     "request-promise": "^4.2.6",
     "url": "^0.11.0"
   }
