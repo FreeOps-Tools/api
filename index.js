@@ -10,6 +10,7 @@ const now = require('performance-now');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
 
 app.post('/api/analyze', (req, res) => {
   const hostname = url.parse(req.body.url).hostname;
