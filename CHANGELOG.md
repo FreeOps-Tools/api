@@ -2,6 +2,8 @@
 
 ## v0.1.4
 
+- Add new feature
+
 ## v0.1.3
 
 - Add new feature
