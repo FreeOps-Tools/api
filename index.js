@@ -8,80 +8,11 @@ const bodyParser = require('body-parser');
 const url = require('url');
 const now = require('performance-now');
 const cors = require('cors');
-const uaParser = require('ua-parser-js');
-const mongoose = require('mongoose');
-
-require('dotenv').config();
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-// Log .env
-// console.log(process.env.MONGODB_URI)
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser:true, useUnifiedTopology:true })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((error) => console.error(error));
-
-// Define schema for analytics data
-const analyticsSchema = new mongoose.Schema({
-  url: String,
-  userAgent: {
-    browser: { type: String },
-    os: { type: String },
-    device: { type: String }
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// Create a model for the schema
-const Analytics = mongoose.model('Analytics', analyticsSchema);
-
-// Logging middleware
-app.use((req, res, next) => {
-  const start = now();
-  const userAgent = req.headers['user-agent'];
-  const parsedUserAgent = uaParser(userAgent);
-
-  res.on('finish', () => {
-    const end = now();
-    const responseTime = ((end - start) / 1000).toFixed(2);
-
-    const analytics = new Analytics({
-      url: req.originalUrl,
-      userAgent: {
-        browser: `${parsedUserAgent.browser.name} ${parsedUserAgent.browser.version}`,
-        os: parsedUserAgent.os.name,
-        device: parsedUserAgent.device.type
-      }
-    });
-    analytics.save();
-    console.log('userAgent:', userAgent);
-    console.log('parsedUserAgent:', parsedUserAgent);
-
-
-    // console.log(`url: ${req.originalUrl}, browser: ${parsedUserAgent.browser.name} ${parsedUserAgent.browser.version}, os: ${parsedUserAgent.os.name} ${parsedUserAgent.os.version}, device: ${parsedUserAgent.device.type}, responseTime: ${responseTime}s`);
-    const data = {
-      url: req.originalUrl,
-      browser: `${parsedUserAgent.browser.name} ${parsedUserAgent.browser.version}`,
-      os: `${parsedUserAgent.os.name} ${parsedUserAgent.os.version}`,
-      device: parsedUserAgent.device.type,
-      responseTime: `${responseTime}s`
-    };
-    
-    console.log(JSON.stringify(data));
-    // return res.json({ browser: null, os: null, device: null, responseTime: 0 });
-      
-  });
-
-  next();
-});
-
-// Endpoint for analyzing URL
 app.post('/api/analyze', (req, res) => {
   const hostname = url.parse(req.body.url).hostname;
   const protocol = url.parse(req.body.url).protocol === 'https:' ? https : http;
