@@ -61,4 +61,4 @@ Response:
 }
 ```
 
-Note: This API uses the `http`, `https`, `dns`, `express`, `body-parser`, and `url` modules in **Node.js**. The `http` and `https` modules are used to make requests to the website, the `dns` module is used to look up the IP address of the website, the `express` module is used to create the server and handle requests, the `body-parser` module is used to parse the request body, and the `url` module is used to parse the URL of the website. The API listens on `port 5000` by default but can be configured using the `PORT` environment variable.
+Note: This API uses the `http`, `https`, `dns`, `express`, `body-parser`, and `url` modules in **NodeJS**. The `http` and `https` modules are used to make requests to the website, the `dns` module is used to look up the IP address of the website, the `express` module is used to create the server and handle requests, the `body-parser` module is used to parse the request body, and the `url` module is used to parse the URL of the website. The API listens on `port 5000` by default but can be configured using the `PORT` environment variable.
