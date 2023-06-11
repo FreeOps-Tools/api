@@ -1,9 +1,10 @@
-const http = require('http');
-const https = require('https');
-const dns = require('dns');
+// analyze.js
+
 const url = require('url');
 const now = require('performance-now');
 const { isURL } = require('validator');
+const makeHttpRequest = require('./httpRequest');
+const performDnsLookup = require('./dnsLookup');
 
 function analyzeURL(req, res) {
   try {
@@ -18,7 +19,6 @@ function analyzeURL(req, res) {
     }
 
     const hostname = url.parse(urlToAnalyze).hostname;
-    const protocol = url.parse(urlToAnalyze).protocol === 'https:' ? https : http;
     const options = {
       method: 'HEAD',
       timeout: 5000,
@@ -26,15 +26,20 @@ function analyzeURL(req, res) {
 
     const start = now();
 
-    protocol.request(urlToAnalyze, options, (httpResponse) => {
-      const isUp = httpResponse.statusCode >= 200 && httpResponse.statusCode < 400;
+    makeHttpRequest(urlToAnalyze, options, (response, httpRequestError) => {
+      if (httpRequestError) {
+        console.error(`Failed to request ${urlToAnalyze}: ${httpRequestError}`);
+        return res.json({ isUp: false, ipAddress: null, uptime: 0, responseTime: 0 });
+      }
+
+      const isUp = response.statusCode >= 200 && response.statusCode < 400;
       if (!isUp) {
         return res.json({ isUp: false, ipAddress: null, uptime: 0, responseTime: 0 });
       }
 
-      dns.lookup(hostname, (dnsError, ipAddress) => {
-        if (dnsError) {
-          console.error(`Failed to lookup IP address for ${urlToAnalyze}: ${dnsError}`);
+      performDnsLookup(hostname, (ipAddress, dnsLookupError) => {
+        if (dnsLookupError) {
+          console.error(`Failed to lookup IP address for ${urlToAnalyze}: ${dnsLookupError}`);
           return res.status(500).json({ error: 'Internal server error' });
         }
 
@@ -50,10 +55,7 @@ function analyzeURL(req, res) {
         console.log(`isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, responseTime: ${responseTime}s`);
         return res.json({ isUp: true, ipAddress, uptime, responseTime });
       });
-    }).on('error', (error) => {
-      console.error(`Failed to request ${urlToAnalyze}: ${error}`);
-      return res.json({ isUp: false, ipAddress: null, uptime: 0, responseTime: 0 });
-    }).end();
+    });
   } catch (error) {
     console.error(`Error analyzing URL: ${error.message}`);
     return res.status(400).json({ error: error.message });
