@@ -25,8 +25,9 @@ Before working on an existing Issue please follow these steps:
 1. reference the Issue in your Pull Request (for example `closes #123`)
 
 > Notes:
-> - any issues that have no activity after 3 weeks will be unassigned and re-assigned to someone else
-> - only request to be assigned an issue if you know how to work on it
+
+- any issues that have no activity after 3 weeks will be unassigned and re-assigned to someone else
+- only request to be assigned an issue if you know how to work on it
 
 ### A step-by-step guide for first-time contributors
 
@@ -46,17 +47,18 @@ Before working on an existing Issue please follow these steps:
 
 8. **Celebrate your contribution:** If your changes are accepted and merged into the main branch of the project, `congratulations!` You have made your first contribution to our open-source project. Celebrate your achievement and continue to contribute to this project or explore other open-source projects.
 
-
 ## Reviewing Pull Requests
 
 We welcome everyone to review Pull Requests, it is a great way to learn and network.
 
 ### DOs
+
 - be kind and respectful, we use inclusive, gender neutral language (for example `they/them` instead of `guy/man`)
 - use inline comments to explain your suggestions
 - use inline suggestions to propose changes
 
 ### DON'Ts
+
 - don't be rude, disrespectful or aggressive
 - do not repeat feedback, this creates more noise than value (check the existing conversation), use GitHub reactions if you agree/disagree with a comment
 - do not blindly approve pull requests to improve your GitHub contributors graph
