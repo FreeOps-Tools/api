@@ -107,7 +107,7 @@ function analyzeURL(req, res) {
             };
             
             console.log(
-              `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}`
+              `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}, sslInfo: ${sslInfo ? JSON.stringify(sslInfo) : 'null'}`
             );
             return res.json(response);
           });
