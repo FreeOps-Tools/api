@@ -6,6 +6,7 @@ const { isURL } = require('validator');
 const makeHttpRequest = require('./httpRequest');
 const performDnsLookup = require('./dnsLookup');
 const checkSSLCertificate = require('./sslCheck');
+const runLighthouseAudit = require('./lighthouseAudit');
 
 function analyzeURL(req, res) {
   try {
@@ -46,7 +47,8 @@ function analyzeURL(req, res) {
               dnsLookupMs: 0,
               statusCode: null,
               protocol: 'http',
-              sslInfo: null
+              sslInfo: null,
+              lighthouse: null
             });
           }
           processResponse(httpResponseDetails, httpLatencyMs, hostname, 'http', res);
@@ -63,14 +65,15 @@ function analyzeURL(req, res) {
           dnsLookupMs: 0,
           statusCode: null,
           protocol: isHttps ? 'https' : 'http',
-          sslInfo: null
+          sslInfo: null,
+          lighthouse: null
         });
       }
       
       processResponse(responseDetails, latencyMs, hostname, isHttps ? 'https' : 'http', res);
     });
 
-    function processResponse(responseDetails, latencyMs, hostname, protocol, res) {
+    async function processResponse(responseDetails, latencyMs, hostname, protocol, res) {
       const isUp = responseDetails.statusCode >= 200 && responseDetails.statusCode < 400;
       if (!isUp) {
         return res.json({
@@ -81,55 +84,63 @@ function analyzeURL(req, res) {
           dnsLookupMs: 0,
           statusCode: responseDetails.statusCode,
           protocol: protocol,
-          sslInfo: null
+          sslInfo: null,
+          lighthouse: null
         });
       }
 
-      performDnsLookup(hostname, ({ ipAddress, lookupMs, error: dnsLookupError }) => {
+      performDnsLookup(hostname, async ({ ipAddress, lookupMs, error: dnsLookupError }) => {
         if (dnsLookupError) {
           console.error(`Failed to lookup IP address: ${dnsLookupError}`);
           return res.status(500).json({ error: 'Internal server error' });
         }
 
-        // Check SSL certificate if HTTPS
+        const uptime = 100;
+        const finalUrl = protocol === 'https' 
+          ? `https://${hostname}` 
+          : `http://${hostname}`;
+
+        // Get SSL info if HTTPS
+        let sslInfo = null;
         if (protocol === 'https') {
-          checkSSLCertificate(hostname, 443, (sslError, sslInfo) => {
-            const uptime = 100;
-            const response = {
-              isUp: true,
-              ipAddress,
-              uptime,
-              latencyMs,
-              dnsLookupMs: lookupMs,
-              statusCode: responseDetails.statusCode,
-              protocol: protocol,
-              sslInfo: sslInfo
-            };
-            
-            console.log(
-              `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}, sslInfo: ${sslInfo ? JSON.stringify(sslInfo) : 'null'}`
-            );
-            return res.json(response);
+          await new Promise((resolve) => {
+            checkSSLCertificate(hostname, 443, (sslError, ssl) => {
+              sslInfo = ssl;
+              resolve();
+            });
           });
-        } else {
-          // HTTP - no SSL info
-          const uptime = 100;
-          const response = {
-            isUp: true,
-            ipAddress,
-            uptime,
-            latencyMs,
-            dnsLookupMs: lookupMs,
-            statusCode: responseDetails.statusCode,
-            protocol: protocol,
-            sslInfo: null
-          };
-          
-          console.log(
-            `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}`
-          );
-          return res.json(response);
         }
+
+        // Run Lighthouse audit (async, but don't block too long)
+        let lighthouseResults = null;
+        try {
+          lighthouseResults = await Promise.race([
+            runLighthouseAudit(finalUrl),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Lighthouse timeout')), 60000)
+            )
+          ]);
+        } catch (lighthouseError) {
+          console.error('Lighthouse audit failed:', lighthouseError.message);
+          // Continue without Lighthouse results
+        }
+        
+        const response = {
+          isUp: true,
+          ipAddress,
+          uptime,
+          latencyMs,
+          dnsLookupMs: lookupMs,
+          statusCode: responseDetails.statusCode,
+          protocol: protocol,
+          sslInfo: sslInfo,
+          lighthouse: lighthouseResults
+        };
+        
+        console.log(
+          `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}`
+        );
+        return res.json(response);
       });
     }
   } catch (error) {
