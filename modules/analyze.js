@@ -22,7 +22,14 @@ function analyzeURL(req, res) {
     makeHttpRequest(urlToAnalyze, {}, (responseDetails, latencyMs, httpRequestError) => {
       if (httpRequestError || !responseDetails) {
         console.error(`Failed to request ${urlToAnalyze}: ${httpRequestError || 'Unknown error'}`);
-        return res.json({ isUp: false, ipAddress: null, uptime: 0, latencyMs: 0, dnsLookupMs: 0 });
+        return res.json({ 
+          isUp: false, 
+          ipAddress: null, 
+          uptime: 0, 
+          latencyMs: 0, 
+          dnsLookupMs: 0,
+          statusCode: null
+        });
       }
 
       const isUp =
