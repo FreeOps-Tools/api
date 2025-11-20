@@ -19,41 +19,45 @@ function analyzeURL(req, res) {
     }
 
     const hostname = url.parse(urlToAnalyze).hostname;
-    const options = {
-      method: 'HEAD',
-      timeout: 5000,
-    };
-
-    const start = now();
-
-    makeHttpRequest(urlToAnalyze, options, (response, httpRequestError) => {
-      if (httpRequestError) {
-        console.error(`Failed to request ${urlToAnalyze}: ${httpRequestError}`);
-        return res.json({ isUp: false, ipAddress: null, uptime: 0, responseTime: 0 });
+    makeHttpRequest(urlToAnalyze, {}, (responseDetails, latencyMs, httpRequestError) => {
+      if (httpRequestError || !responseDetails) {
+        console.error(`Failed to request ${urlToAnalyze}: ${httpRequestError || 'Unknown error'}`);
+        return res.json({ isUp: false, ipAddress: null, uptime: 0, latencyMs: 0, dnsLookupMs: 0 });
       }
 
-      const isUp = response.statusCode >= 200 && response.statusCode < 400;
+      const isUp =
+        responseDetails.statusCode >= 200 && responseDetails.statusCode < 400;
       if (!isUp) {
-        return res.json({ isUp: false, ipAddress: null, uptime: 0, responseTime: 0 });
+        return res.json({
+          isUp: false,
+          ipAddress: null,
+          uptime: 0,
+          latencyMs,
+          dnsLookupMs: 0,
+          statusCode: responseDetails.statusCode,
+        });
       }
 
-      performDnsLookup(hostname, (ipAddress, dnsLookupError) => {
+      performDnsLookup(hostname, ({ ipAddress, lookupMs, error: dnsLookupError }) => {
         if (dnsLookupError) {
           console.error(`Failed to lookup IP address for ${urlToAnalyze}: ${dnsLookupError}`);
           return res.status(500).json({ error: 'Internal server error' });
         }
 
-        // Calculate responseTime
-        const end = now();
-        const responseTime = ((end - start) / 1000).toFixed(2);
+        // Calculate uptime baseline on successful check
+        const uptime = 100;
 
-        // calculate uptime
-        const totalSeconds = (end - start) / 1000; // convert to seconds
-        const availableSeconds = totalSeconds - (totalSeconds * 0.01); // assuming 99.99% uptime
-        const uptime = ((availableSeconds / totalSeconds) * 100).toFixed(2);
-
-        console.log(`isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, responseTime: ${responseTime}s`);
-        return res.json({ isUp: true, ipAddress, uptime, responseTime });
+        console.log(
+          `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}`
+        );
+        return res.json({
+          isUp: true,
+          ipAddress,
+          uptime,
+          latencyMs,
+          dnsLookupMs: lookupMs,
+          statusCode: responseDetails.statusCode,
+        });
       });
     });
   } catch (error) {
