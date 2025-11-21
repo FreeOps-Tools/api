@@ -111,15 +111,17 @@ function analyzeURL(req, res) {
           });
         }
 
-        // Run Lighthouse audit (async, but don't block too long)
+        // Run Lighthouse audit (with shorter timeout to not block too long)
         let lighthouseResults = null;
         try {
+          console.log(`Starting Lighthouse audit for ${finalUrl}...`);
           lighthouseResults = await Promise.race([
             runLighthouseAudit(finalUrl),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Lighthouse timeout')), 60000)
+              setTimeout(() => reject(new Error('Lighthouse timeout')), 30000)
             )
           ]);
+          console.log('Lighthouse audit completed:', lighthouseResults ? 'Success' : 'No results');
         } catch (lighthouseError) {
           console.error('Lighthouse audit failed:', lighthouseError.message);
           // Continue without Lighthouse results
@@ -138,7 +140,7 @@ function analyzeURL(req, res) {
         };
         
         console.log(
-          `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}`
+          `isUp: ${isUp}, ipAddress: ${ipAddress}, uptime: ${uptime}%, latencyMs: ${latencyMs}, dnsLookupMs: ${lookupMs}, protocol: ${protocol}, lighthouse: ${lighthouseResults ? 'present' : 'null'}`
         );
         return res.json(response);
       });
